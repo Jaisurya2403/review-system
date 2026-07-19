@@ -439,7 +439,7 @@ Do you want to continue?
 }
 
 function viewQR(qrSlug, storeName, qrCodePath) {
-  const reviewUrl = `${window.location.origin}/customer-review.html?store=${qrSlug}`;
+  const reviewUrl = `https://worker-review-system.vercel.app/customer-review.html?store=${qrSlug}`;
   currentQRData   = { storeName, reviewUrl, qrCodePath };
   const content   = document.getElementById('qr-modal-content');
   if (qrCodePath) {
