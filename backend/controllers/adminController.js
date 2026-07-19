@@ -297,9 +297,14 @@ async function getStores(req, res) {
     `);
     res.json({ stores });
   } catch (err) {
-    console.error('Get stores error:', err);
-    res.status(500).json({ error: 'Server error fetching stores.' });
-  }
+    console.error("GET STORES ERROR:");
+    console.error(err);
+
+    res.status(500).json({
+        error: err.message,
+        stack: err.stack
+    });
+}
 }
 
 // PUT /api/admin/stores/:id/status
