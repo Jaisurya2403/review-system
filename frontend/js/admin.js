@@ -444,6 +444,10 @@ function viewQR(qrSlug, storeName, qrCodePath) {
   currentQRData   = { storeName, reviewUrl, qrCodePath };
   const content   = document.getElementById('qr-modal-content');
   if (qrCodePath) {
+    console.log(qrSlug);
+console.log(storeName);
+console.log(qrCodePath);
+console.log(IMG_BASE);
     const src = `${IMG_BASE}/${qrCodePath}`;
     content.innerHTML = `
       <p style="font-weight:700;margin-bottom:12px;">${escapeHtml(storeName)}</p>
