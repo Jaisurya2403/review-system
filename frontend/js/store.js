@@ -503,10 +503,7 @@ async function loadQRCode() {
 
     const qrDisplay = document.getElementById('qr-display');
     if (store.qr_code_path) {
-      const qrImgUrl =
-    store.qr_code_path.startsWith("http")
-        ? store.qr_code_path
-        : `${IMG_BASE}/${store.qr_code_path}`;
+      const qrImgUrl = store.qr_code_path;
       qrDisplay.innerHTML = `<img src="${qrImgUrl}" alt="QR Code" style="width:200px;height:200px;border:6px solid white;box-shadow:var(--shadow);border-radius:var(--radius);" onerror="this.parentElement.innerHTML='<p style=color:var(--gray-500)>QR image not found on server.</p>'" />`;
     } else {
       qrDisplay.innerHTML = `<p style="color:var(--gray-500);">QR code not generated yet.</p>`;

@@ -285,13 +285,11 @@ async function deleteWorker(req, res) {
     const worker = check[0];
 
     // Delete image from Cloudinary
-    if (worker.image_path) {
-      try {
-        await deleteImage(worker.image_path);
-      } catch (err) {
-        console.warn('Could not delete worker image:', err.message);
-      }
-    }
+    const publicId = extractPublicId(worker.image_path);
+
+if (publicId) {
+    await deleteImage(publicId);
+}
 
     // Delete reviews of this worker
     await db.query(

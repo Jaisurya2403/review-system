@@ -36,6 +36,7 @@ function executeConfirmAction() {
 if (!adminToken) window.location.href = 'admin-login.html';
 
 function authHeaders() {
+  
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
 }
 

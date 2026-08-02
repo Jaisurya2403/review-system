@@ -6,11 +6,11 @@
 
 const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
-const QRCode = require('qrcode');
 const path   = require('path');
 const fs     = require('fs');
 const db     = require('../config/db');
-const cloudinary = require("../config/cloudinary");
+const QRCode = require("qrcode");
+const { uploadBuffer } = require("../config/cloudinary");
 
 // ────────────────────────────────────────────────────────────
 // AUTH
@@ -204,8 +204,6 @@ async function createStore(req, res) {
       owner_username, owner_password,
       subscription_days = 30           // ← NEW: default 30 days
     } = req.body;
-
-    console.log("Creating QR at:", path.join(qrDir, `store-${storeId}.png`));
     if (!store_name || !owner_username || !owner_password) {
       return res.status(400).json({ error: 'Store name, owner username, and password are required.' });
     }
@@ -234,39 +232,45 @@ async function createStore(req, res) {
     // Generate QR slug
     const baseSlug = store_name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g,'-').substring(0,30);
     const qrSlug   = `${baseSlug}-${Date.now().toString().slice(-5)}`;
+    const reviewUrl = `${process.env.BASE_URL}/customer-review.html?store=${qrSlug}`;
 
-    // Insert store with subscription dates
-    const [storeResult] = await db.query(
-      `INSERT INTO stores
-        (store_name, store_address, qr_slug, subscription_status,
-         subscription_start, subscription_end, subscription_days)
-       VALUES (?, ?, ?, 'active', ?, ?, ?)`,
-      [store_name.trim(), store_address || '', qrSlug, fmt(startDate), fmt(endDate), days]
-    );
-    const storeId = storeResult.insertId;
-
-    // Generate QR code
-    const baseUrl = process.env.BASE_URL || "http://localhost:5500";
-const qrUrl = `${baseUrl}/customer-review.html?store=${qrSlug}`;
-
-// Create QR as Base64
-const qrBase64 = await QRCode.toDataURL(qrUrl, {
-    width: 300,
+const qrBuffer = await QRCode.toBuffer(reviewUrl, {
+    width: 500,
     margin: 2
 });
 
-// Upload to Cloudinary
-const uploadResult = await cloudinary.uploader.upload(qrBase64, {
-    folder: "worker-review/qrcodes",
-    public_id: `store-${storeId}`,
-    overwrite: true
-});
-
-// Save Cloudinary URL
-await db.query(
-    "UPDATE stores SET qr_code_path=? WHERE id=?",
-    [uploadResult.secure_url, storeId]
+const uploadedQR = await uploadBuffer(
+    qrBuffer,
+    "worker-review/qrcodes",
+    `${qrSlug}-${Date.now()}`
 );
+
+    // Insert store with subscription dates
+    const [storeResult] = await db.query(
+  `INSERT INTO stores
+    (store_name,
+     store_address,
+     qr_slug,
+     qr_code_path,
+     subscription_status,
+     subscription_start,
+     subscription_end,
+     subscription_days)
+   VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
+  [
+    store_name.trim(),
+    store_address || '',
+    qrSlug,
+    uploadedQR.secure_url,   // Cloudinary QR URL
+    fmt(startDate),
+    fmt(endDate),
+    days
+  ]
+);
+    const storeId = storeResult.insertId;
+
+
+
 
     // Create store owner account
     const passwordHash = await bcrypt.hash(cleanPass, 12);
@@ -277,13 +281,16 @@ await db.query(
 
     res.status(201).json({
       message : 'Store created successfully!',
-      store   : {
-        id: storeId, store_name, qr_slug: qrSlug,
-        qr_url: qrUrl, qr_code_path: qrCodePath,
-        subscription_start: fmt(startDate),
-        subscription_end  : fmt(endDate),
-        subscription_days : days
-      },
+      store: {
+    id: storeId,
+    store_name,
+    qr_slug: qrSlug,
+    qr_url: reviewUrl,
+    qr_code_path: uploadedQR.secure_url,
+    subscription_start: fmt(startDate),
+    subscription_end: fmt(endDate),
+    subscription_days: days
+},
       owner: { username: cleanUser }
     });
   } catch (err) {
