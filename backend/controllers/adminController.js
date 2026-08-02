@@ -11,7 +11,6 @@ const fs     = require('fs');
 const db     = require('../config/db');
 const QRCode = require("qrcode");
 const { uploadBuffer } = require("../config/cloudinary");
-
 // ────────────────────────────────────────────────────────────
 // AUTH
 // ────────────────────────────────────────────────────────────
@@ -298,6 +297,9 @@ const uploadedQR = await uploadBuffer(
     res.status(500).json({ error: 'Server error creating store.' });
   }
 }
+
+
+//regenerate the qr
 
 // GET /api/admin/stores
 async function getStores(req, res) {
