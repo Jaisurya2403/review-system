@@ -450,6 +450,7 @@ console.log(IMG_BASE);
   if (qrCodePath) {
     const src = qrCodePath;
     console.log("Final src:", src);
+    console.log(JSON.stringify(qrCodePath));
     content.innerHTML = `
       <p style="font-weight:700;margin-bottom:12px;">${escapeHtml(storeName)}</p>
       <img src="${src}" style="width:200px;height:200px;border:6px solid #fff;box-shadow:var(--shadow);border-radius:var(--radius);"
