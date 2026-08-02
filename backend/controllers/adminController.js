@@ -10,6 +10,7 @@ const QRCode = require('qrcode');
 const path   = require('path');
 const fs     = require('fs');
 const db     = require('../config/db');
+const cloudinary = require("../config/cloudinary");
 
 // ────────────────────────────────────────────────────────────
 // AUTH
@@ -204,6 +205,7 @@ async function createStore(req, res) {
       subscription_days = 30           // ← NEW: default 30 days
     } = req.body;
 
+    console.log("Creating QR at:", path.join(qrDir, `store-${storeId}.png`));
     if (!store_name || !owner_username || !owner_password) {
       return res.status(400).json({ error: 'Store name, owner username, and password are required.' });
     }
@@ -244,13 +246,27 @@ async function createStore(req, res) {
     const storeId = storeResult.insertId;
 
     // Generate QR code
-    const baseUrl    = process.env.BASE_URL || 'http://localhost:5500';
-    const qrUrl      = `${baseUrl}/customer-review.html?store=${qrSlug}`;
-    const qrDir      = path.join(__dirname, '../uploads/qrcodes');
-    if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
-    await QRCode.toFile(path.join(qrDir, `store-${storeId}.png`), qrUrl, { width: 300, margin: 2 });
-    const qrCodePath = `uploads/qrcodes/store-${storeId}.png`;
-    await db.query('UPDATE stores SET qr_code_path = ? WHERE id = ?', [qrCodePath, storeId]);
+    const baseUrl = process.env.BASE_URL || "http://localhost:5500";
+const qrUrl = `${baseUrl}/customer-review.html?store=${qrSlug}`;
+
+// Create QR as Base64
+const qrBase64 = await QRCode.toDataURL(qrUrl, {
+    width: 300,
+    margin: 2
+});
+
+// Upload to Cloudinary
+const uploadResult = await cloudinary.uploader.upload(qrBase64, {
+    folder: "worker-review/qrcodes",
+    public_id: `store-${storeId}`,
+    overwrite: true
+});
+
+// Save Cloudinary URL
+await db.query(
+    "UPDATE stores SET qr_code_path=? WHERE id=?",
+    [uploadResult.secure_url, storeId]
+);
 
     // Create store owner account
     const passwordHash = await bcrypt.hash(cleanPass, 12);
