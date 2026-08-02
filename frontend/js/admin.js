@@ -443,12 +443,13 @@ function viewQR(qrSlug, storeName, qrCodePath) {
   const reviewUrl = `https://worker-review-system.vercel.app/customer-review.html?store=${qrSlug}`;
   currentQRData   = { storeName, reviewUrl, qrCodePath };
   const content   = document.getElementById('qr-modal-content');
-  if (qrCodePath) {
-    console.log(qrSlug);
+  console.log(qrSlug);
 console.log(storeName);
 console.log(qrCodePath);
 console.log(IMG_BASE);
-    const src = `${IMG_BASE}/${qrCodePath}`;
+  if (qrCodePath) {
+    const src = qrCodePath;
+    console.log("Final src:", src);
     content.innerHTML = `
       <p style="font-weight:700;margin-bottom:12px;">${escapeHtml(storeName)}</p>
       <img src="${src}" style="width:200px;height:200px;border:6px solid #fff;box-shadow:var(--shadow);border-radius:var(--radius);"
